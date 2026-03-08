@@ -1,0 +1,50 @@
+# Project-local docs/notes
+CLAUDE.md
+request_map.md
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+
+# Test and coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+junit.xml
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs and temp files
+*.log
+*.pid
+*.tmp
+
+# Editors/OS
+.idea/
+.vscode/
+.DS_Store
