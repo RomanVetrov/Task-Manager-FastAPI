@@ -12,6 +12,7 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.10.4"
   SECRET_KEY: test-secret-key-minimum-32-bytes-value
   DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
   INTEGRATION_DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
@@ -35,6 +36,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
 
       - name: Install dependencies
@@ -78,6 +80,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
 
       - name: Install dependencies
