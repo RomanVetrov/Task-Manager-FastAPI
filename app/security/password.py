@@ -8,6 +8,7 @@
 
 import logging
 
+from opentelemetry import trace
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError, VerifyMismatchError
 from argon2.low_level import Type
@@ -16,6 +17,7 @@ from fastapi.concurrency import run_in_threadpool
 from app.config import settings
 
 log = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 pwd_hasher = PasswordHasher(
     time_cost=settings.ARGON_TIME_COST,
@@ -38,21 +40,23 @@ def get_dummy_hash() -> str:
 
 
 async def hash_password(*, password: str) -> str:
-    if len(password) > settings.ARGON_MAX_PASSWORD_LEN:
-        raise ValueError("Пароль слишком длинный")
-    return await run_in_threadpool(pwd_hasher.hash, password)
+    with tracer.start_as_current_span("security.password.hash_argon2"):
+        if len(password) > settings.ARGON_MAX_PASSWORD_LEN:
+            raise ValueError("Пароль слишком длинный")
+        return await run_in_threadpool(pwd_hasher.hash, password)
 
 
 async def verify_password(*, password: str, hashed_password: str) -> bool:
-    def _verify() -> bool:
-        if len(password) > settings.ARGON_MAX_PASSWORD_LEN:
-            return False
-        try:
-            return pwd_hasher.verify(hashed_password, password)
-        except VerifyMismatchError:
-            return False
-        except (VerificationError, InvalidHash) as exc:
-            log.warning("Argon2 verify failed (%s)", exc.__class__.__name__)
-            return False
+    with tracer.start_as_current_span("security.password.verify_argon2"):
+        def _verify() -> bool:
+            if len(password) > settings.ARGON_MAX_PASSWORD_LEN:
+                return False
+            try:
+                return pwd_hasher.verify(hashed_password, password)
+            except VerifyMismatchError:
+                return False
+            except (VerificationError, InvalidHash) as exc:
+                log.warning("Argon2 verify failed (%s)", exc.__class__.__name__)
+                return False
 
-    return await run_in_threadpool(_verify)
+        return await run_in_threadpool(_verify)

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from opentelemetry import trace
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +29,7 @@ from app.services.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+tracer = trace.get_tracer(__name__)
 
 
 def _refresh_ttl_seconds() -> int:
@@ -42,42 +44,44 @@ def _refresh_key(user_id: UUID, jti: str) -> str:
 
 def _parse_refresh_token_or_401(refresh_token: str) -> tuple[UUID, str]:
     """Декодирует refresh-токен и возвращает (user_id, jti). Поднимает 401 при ошибке."""
-    try:
-        token_data = decode_refresh_token(refresh_token)
-    except (TokenExpired, TokenInvalid):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Недействительный или истёкший refresh токен",
-        )
+    with tracer.start_as_current_span("auth.parse_refresh_token"):
+        try:
+            token_data = decode_refresh_token(refresh_token)
+        except (TokenExpired, TokenInvalid):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Недействительный или истёкший refresh токен",
+            )
 
-    try:
-        user_id = UUID(token_data.sub)
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Некорректный идентификатор пользователя в refresh токене",
-        )
+        try:
+            user_id = UUID(token_data.sub)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Некорректный идентификатор пользователя в refresh токене",
+            )
 
-    jti = str(token_data.payload["jti"])
-    return user_id, jti
+        jti = str(token_data.payload["jti"])
+        return user_id, jti
 
 
 async def _issue_token_pair(user_id: UUID, redis: Redis) -> TokenPair:
     """Создаёт новую пару токенов и сохраняет jti refresh-токена в Redis."""
-    access_token = create_access_token(subject=str(user_id))
-    refresh_token, jti = create_refresh_token(subject=str(user_id))
+    with tracer.start_as_current_span("auth.issue_token_pair"):
+        access_token = create_access_token(subject=str(user_id))
+        refresh_token, jti = create_refresh_token(subject=str(user_id))
 
-    await redis.set(
-        _refresh_key(user_id, jti),
-        str(user_id),
-        ex=_refresh_ttl_seconds(),
-    )
+        await redis.set(
+            _refresh_key(user_id, jti),
+            str(user_id),
+            ex=_refresh_ttl_seconds(),
+        )
 
-    return TokenPair(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-    )
+        return TokenPair(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        )
 
 
 @router.post(
