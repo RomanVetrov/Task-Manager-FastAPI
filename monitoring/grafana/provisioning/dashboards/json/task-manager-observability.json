@@ -863,7 +863,9 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0"
         },
         "overrides": []
       },
@@ -891,10 +893,11 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(increase(http_requests_total{status=\"401\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0)",
+          "expr": "round(sum(increase(http_requests_total{status=\"401\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
           "legendFormat": "",
-          "range": true,
-          "refId": "A"
+          "range": false,
+          "refId": "A",
+          "instant": true
         }
       ],
       "title": "401 за 5 минут",
@@ -928,7 +931,9 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0"
         },
         "overrides": []
       },
@@ -956,10 +961,11 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(increase(http_requests_total{status=\"403\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0)",
+          "expr": "round(sum(increase(http_requests_total{status=\"403\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
           "legendFormat": "",
-          "range": true,
-          "refId": "A"
+          "range": false,
+          "refId": "A",
+          "instant": true
         }
       ],
       "title": "403 за 5 минут",
@@ -993,7 +999,9 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0"
         },
         "overrides": []
       },
@@ -1021,10 +1029,11 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(increase(http_requests_total{status=\"429\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0)",
+          "expr": "round(sum(increase(http_requests_total{status=\"429\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
           "legendFormat": "",
-          "range": true,
-          "refId": "A"
+          "range": false,
+          "refId": "A",
+          "instant": true
         }
       ],
       "title": "429 за 5 минут",
@@ -1106,6 +1115,6 @@
   "timezone": "",
   "title": "Task Manager API - Observability",
   "uid": "task-manager-observability",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
