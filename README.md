@@ -37,7 +37,8 @@
 | Слой | Инструменты |
 |---|---|
 | API | FastAPI, Pydantic |
-| Бизнес-логика | Services, Repositories |
+| Бизнес-логика | Services |
+| Доступ к данным | Repositories |
 | БД | PostgreSQL, SQLAlchemy 2.0 (async), Alembic |
 | Кэш / лимиты | Redis |
 | Безопасность | JWT (access/refresh), Argon2, rate limiting |
@@ -108,11 +109,27 @@
 
 ### 1. Подготовить `.env`
 
-Минимально нужны:
+Для запуска через Docker Compose минимально нужны:
 
 ```env
 POSTGRES_PASSWORD=your_strong_password
 SECRET_KEY=your_secret_key_min_32_chars
+```
+
+Для запуска без Docker (через `uv run uvicorn`) обязательно нужны:
+
+```env
+DATABASE_URL=postgresql+asyncpg://task_user:task_password@localhost:5432/task_manager
+SECRET_KEY=your_secret_key_min_32_chars
+```
+
+Опционально можно переопределить (иначе берутся default из `app/config.py`):
+
+```env
+ALGORITHM=HS256
+REDIS_URL=redis://localhost:6379/0
+ACCESS_TOKEN_EXPIRE_MINUTES=10
+REFRESH_TOKEN_EXPIRE_DAYS=7
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
 ```
@@ -266,9 +283,3 @@ monitoring/
 load/
   locustfile.py
 ```
-
-## Что дальше
-
-- SonarCloud quality gate
-- финальная полировка README примерами API-ответов
-- разворот CD в отдельную deployment-среду
