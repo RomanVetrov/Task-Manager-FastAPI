@@ -77,6 +77,22 @@ pre-commit-run:
 pre-commit-update:
   uv run pre-commit autoupdate
 
+# Запустить все тесты.
+test:
+  uv run pytest
+
+# Запустить только unit-тесты.
+test-unit:
+  uv run pytest tests/unit -q
+
+# Запустить тесты с покрытием в консоли.
+test-cov:
+  uv run pytest --cov=app --cov-report=term-missing
+
+# Запустить тесты с HTML-отчётом покрытия (htmlcov/index.html).
+test-cov-html:
+  uv run pytest --cov=app --cov-report=html
+
 # Проверить код линтером Ruff (без автоисправлений).
 lint:
   uv run ruff check .
