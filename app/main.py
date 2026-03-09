@@ -13,6 +13,8 @@ from app.routes.tags import router as tags_router
 from app.routes.tasks import router as tasks_router
 from app.telemetry import setup_telemetry, shutdown_telemetry
 
+API_V1_PREFIX = "/api/v1"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,7 +44,7 @@ app.add_middleware(LoggingMiddleware)
 app.add_middleware(RequestIDMiddleware)
 
 app.include_router(metrics_router)
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(health_router, prefix="/api/v1")
-app.include_router(tasks_router, prefix="/api/v1")
-app.include_router(tags_router, prefix="/api/v1")
+app.include_router(auth_router, prefix=API_V1_PREFIX)
+app.include_router(health_router, prefix=API_V1_PREFIX)
+app.include_router(tasks_router, prefix=API_V1_PREFIX)
+app.include_router(tags_router, prefix=API_V1_PREFIX)

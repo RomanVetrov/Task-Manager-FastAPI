@@ -9,5 +9,5 @@ redis_client = Redis.from_url(
 )
 
 
-async def get_redis() -> Redis:
+def get_redis() -> Redis:
     return redis_client
