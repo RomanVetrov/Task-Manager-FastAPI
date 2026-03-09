@@ -42,3 +42,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
 addopts = "-ra"
+markers = [
+    "integration: интеграционные тесты с реальной базой данных",
+]

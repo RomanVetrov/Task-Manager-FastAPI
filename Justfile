@@ -85,6 +85,10 @@ test:
 test-unit:
   uv run pytest tests/unit -q
 
+# Запустить интеграционные тесты (требуется доступная PostgreSQL БД).
+test-integration:
+  uv run pytest tests/integration -q -m integration
+
 # Запустить тесты с покрытием в консоли.
 test-cov:
   uv run pytest --cov=app --cov-report=term-missing
@@ -92,6 +96,11 @@ test-cov:
 # Запустить тесты с HTML-отчётом покрытия (htmlcov/index.html).
 test-cov-html:
   uv run pytest --cov=app --cov-report=html
+
+# Очистить артефакты тестов и покрытия.
+test-clear:
+  rm -rf htmlcov .pytest_cache
+  rm -f .coverage coverage.xml
 
 # Проверить код линтером Ruff (без автоисправлений).
 lint:
