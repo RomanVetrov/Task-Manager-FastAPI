@@ -877,9 +877,9 @@
       },
       "id": 11,
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -888,12 +888,12 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value"
       },
       "targets": [
         {
           "editorMode": "code",
-          "expr": "round(sum(increase(http_requests_total{status=\"401\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
+          "expr": "round(sum(increase(http_requests_total{status=\"401\"}[5m])) or vector(0))",
           "legendFormat": "",
           "range": false,
           "refId": "A",
@@ -945,9 +945,9 @@
       },
       "id": 12,
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -956,12 +956,12 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value"
       },
       "targets": [
         {
           "editorMode": "code",
-          "expr": "round(sum(increase(http_requests_total{status=\"403\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
+          "expr": "round(sum(increase(http_requests_total{status=\"403\"}[5m])) or vector(0))",
           "legendFormat": "",
           "range": false,
           "refId": "A",
@@ -1013,9 +1013,9 @@
       },
       "id": 13,
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1024,12 +1024,12 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value"
       },
       "targets": [
         {
           "editorMode": "code",
-          "expr": "round(sum(increase(http_requests_total{status=\"429\", method=~\"$method\", path=~\"$path\"}[5m])) or vector(0))",
+          "expr": "round(sum(increase(http_requests_total{status=\"429\"}[5m])) or vector(0))",
           "legendFormat": "",
           "range": false,
           "refId": "A",
@@ -1115,6 +1115,6 @@
   "timezone": "",
   "title": "Task Manager API - Observability",
   "uid": "task-manager-observability",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
