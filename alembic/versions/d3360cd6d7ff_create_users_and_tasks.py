@@ -17,6 +17,7 @@ revision: str = "d3360cd6d7ff"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+UTC_NOW_SQL = sa.text("timezone('utc', now())")
 
 
 def upgrade() -> None:
@@ -33,13 +34,13 @@ def upgrade() -> None:
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("timezone('utc', now())"),
+            server_default=UTC_NOW_SQL,
             nullable=False,
         ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("timezone('utc', now())"),
+            server_default=UTC_NOW_SQL,
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
@@ -57,7 +58,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("timezone('utc', now())"),
+            server_default=UTC_NOW_SQL,
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
