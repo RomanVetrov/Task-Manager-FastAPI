@@ -1,17 +1,37 @@
 # Task Manager FastAPI
 
+**Качество и доставка**
+
 [![CI](https://github.com/RomanVetrov/Task-Manager-FastAPI/actions/workflows/ci.yml/badge.svg)](https://github.com/RomanVetrov/Task-Manager-FastAPI/actions/workflows/ci.yml)
 [![CD](https://github.com/RomanVetrov/Task-Manager-FastAPI/actions/workflows/cd.yml/badge.svg)](https://github.com/RomanVetrov/Task-Manager-FastAPI/actions/workflows/cd.yml)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
-[![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800?logo=grafana&logoColor=white)](https://grafana.com/)
-[![Jaeger](https://img.shields.io/badge/Jaeger-Tracing-66CFE3)](https://www.jaegertracing.io/)
-[![Ruff](https://img.shields.io/badge/Ruff-Lint%2FFormat-D7FF64)](https://docs.astral.sh/ruff/)
-[![Pytest](https://img.shields.io/badge/Pytest-Tests-0A9EDC?logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=RomanVetrov_Task-Manager-FastAPI&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=RomanVetrov_Task-Manager-FastAPI)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=RomanVetrov_Task-Manager-FastAPI&metric=coverage)](https://sonarcloud.io/summary/new_code?id=RomanVetrov_Task-Manager-FastAPI)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=RomanVetrov_Task-Manager-FastAPI&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=RomanVetrov_Task-Manager-FastAPI)
+
+**Технологии**
+
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=flat-square)](https://www.sqlalchemy.org/)
+[![Alembic](https://img.shields.io/badge/Alembic-Migrations-111111?style=flat-square)](https://alembic.sqlalchemy.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+[![Argon2](https://img.shields.io/badge/Argon2-Password%20Hash-5A6ACF?style=flat-square)](https://argon2-cffi.readthedocs.io/)
+
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?style=flat-square&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800?style=flat-square&logo=grafana&logoColor=white)](https://grafana.com/)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Tracing-5528FF?style=flat-square)](https://opentelemetry.io/)
+[![Jaeger](https://img.shields.io/badge/Jaeger-UI-66CFE3?style=flat-square)](https://www.jaegertracing.io/)
+[![Locust](https://img.shields.io/badge/Locust-Load%20Testing-2FAF53?style=flat-square)](https://locust.io/)
+
+[![uv](https://img.shields.io/badge/uv-Package%20Manager-5C7CFA?style=flat-square)](https://docs.astral.sh/uv/)
+[![just](https://img.shields.io/badge/just-Task%20Runner-111111?style=flat-square)](https://github.com/casey/just)
+[![Ruff](https://img.shields.io/badge/Ruff-Lint%20%2B%20Format-D7FF64?style=flat-square)](https://docs.astral.sh/ruff/)
+[![Pytest](https://img.shields.io/badge/Pytest-Tests-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-Hooks-FAB040?style=flat-square&logo=pre-commit&logoColor=white)](https://pre-commit.com/)
 
 Практический backend-проект на FastAPI с акцентом на:
 - безопасную auth-логику (JWT access + refresh, Argon2, rate limit)
