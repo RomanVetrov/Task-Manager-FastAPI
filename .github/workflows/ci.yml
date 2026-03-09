@@ -94,7 +94,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_PROJECT_KEY != '' && vars.SONAR_ORGANIZATION != '' }}
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: sonarsource/sonarqube-scan-action@v6
         with:
           args: >
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
