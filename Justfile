@@ -28,6 +28,14 @@ restart:
 ps:
   docker compose ps
 
+# Показать полезные ссылки локального окружения.
+urls:
+  @echo "API docs:   http://localhost:8000/docs"
+  @echo "Metrics:    http://localhost:8000/metrics"
+  @echo "Prometheus: http://localhost:9090"
+  @echo "Grafana:    http://localhost:3000"
+  @echo "Jaeger:     http://localhost:16686"
+
 # Смотреть логи (все сервисы или один сервис: `just logs api`).
 logs service="":
   if [ -n "{{service}}" ]; then docker compose logs -f --tail=200 "{{service}}"; else docker compose logs -f --tail=200; fi
