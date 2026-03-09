@@ -35,6 +35,7 @@ urls:
   @echo "Prometheus: http://localhost:9090"
   @echo "Grafana:    http://localhost:3000"
   @echo "Jaeger:     http://localhost:16686"
+  @echo "Locust UI:  http://localhost:8089"
 
 # Смотреть логи (все сервисы или один сервис: `just logs api`).
 logs service="":
@@ -55,6 +56,14 @@ db-shell:
 # Открыть redis-cli в контейнере Redis.
 redis-cli:
   docker compose exec redis redis-cli
+
+# Запустить Locust в UI режиме для ручного управления нагрузкой.
+load:
+  uv run locust -f load/locustfile.py --host "${LOCUST_HOST:-http://localhost:8000}" --web-port "${LOCUST_WEB_PORT:-8089}"
+
+# Запустить Locust в headless режиме.
+load-headless users="20" spawn="2" run_time="5m":
+  uv run locust -f load/locustfile.py --host "${LOCUST_HOST:-http://localhost:8000}" --headless -u {{users}} -r {{spawn}} --run-time {{run_time}} --only-summary
 
 # Установить git pre-commit hook в локальный репозиторий.
 pre-commit-install:
