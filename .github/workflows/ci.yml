@@ -49,6 +49,8 @@ jobs:
   test:
     name: Tests
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     services:
       postgres:
         image: postgres:16-alpine
@@ -91,7 +93,7 @@ jobs:
         run: uv run pytest -q --cov=app --cov-report=term-missing --cov-report=xml --junitxml=pytest.xml
 
       - name: SonarCloud Scan
-        if: ${{ secrets.SONAR_TOKEN != '' && vars.SONAR_PROJECT_KEY != '' && vars.SONAR_ORGANIZATION != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_PROJECT_KEY != '' && vars.SONAR_ORGANIZATION != '' }}
         uses: SonarSource/sonarqube-scan-action@v5
         with:
           args: >
@@ -104,7 +106,7 @@ jobs:
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.python.xunit.reportPath=pytest.xml
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload coverage report
