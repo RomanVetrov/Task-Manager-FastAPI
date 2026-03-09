@@ -1,3 +1,4 @@
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -30,6 +31,11 @@ from app.services.auth import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 tracer = trace.get_tracer(__name__)
+
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+RedisClient = Annotated[Redis, Depends(get_redis)]
+LoginForm = Annotated[OAuth2PasswordRequestForm, Depends()]
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
 def _refresh_ttl_seconds() -> int:
@@ -86,7 +92,6 @@ async def _issue_token_pair(user_id: UUID, redis: Redis) -> TokenPair:
 
 @router.post(
     "/register",
-    response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация пользователя",
     dependencies=[
@@ -95,7 +100,7 @@ async def _issue_token_pair(user_id: UUID, redis: Redis) -> TokenPair:
 )
 async def create_user(
     payload: RegisterCreate,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> UserRead:
     try:
         new_user = await register_user(session, payload.email, payload.password)
@@ -109,16 +114,15 @@ async def create_user(
 
 @router.post(
     "/login",
-    response_model=TokenPair,
     summary="Вход в систему",
     dependencies=[
         Depends(rate_limit_by_ip(limit=10, window_seconds=60, scope="auth_login"))
     ],
 )
 async def login_user(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
+    form_data: LoginForm,
+    session: DbSession,
+    redis: RedisClient,
 ) -> TokenPair:
     try:
         user = await authenticate_active_user(
@@ -144,7 +148,6 @@ async def login_user(
 
 @router.post(
     "/refresh",
-    response_model=TokenPair,
     summary="Обновить access/refresh токены",
     dependencies=[
         Depends(rate_limit_by_ip(limit=10, window_seconds=60, scope="auth_refresh"))
@@ -152,8 +155,8 @@ async def login_user(
 )
 async def refresh_token_pair(
     payload: RefreshTokenRequest,
-    session: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
+    session: DbSession,
+    redis: RedisClient,
 ) -> TokenPair:
     user_id, jti = _parse_refresh_token_or_401(payload.refresh_token)
 
@@ -176,8 +179,8 @@ async def refresh_token_pair(
 )
 async def logout_user(
     payload: RefreshTokenRequest,
-    session: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
+    session: DbSession,
+    redis: RedisClient,
 ) -> Response:
     user_id, jti = _parse_refresh_token_or_401(payload.refresh_token)
 
@@ -187,6 +190,6 @@ async def logout_user(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/me", response_model=UserRead, summary="Получить текущего пользователя")
-async def current_user(current_user: User = Depends(get_current_user)) -> UserRead:
+@router.get("/me", summary="Получить текущего пользователя")
+async def current_user(current_user: CurrentUserDep) -> UserRead:
     return UserRead.model_validate(current_user)

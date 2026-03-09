@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,7 @@ from app.services import task as task_service
 from app.services.task import InvalidDueDate
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
+DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 _DUE_DATE_ERROR = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
@@ -21,14 +24,13 @@ _DUE_DATE_ERROR = HTTPException(
 
 @router.post(
     "",
-    response_model=TaskRead,
     status_code=status.HTTP_201_CREATED,
     summary="Создать задачу",
 )
 async def create_task(
     payload: TaskCreate,
     current_user: CurrentUser,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> TaskRead:
     try:
         task = await task_service.create_task(session, current_user, payload)
@@ -39,12 +41,11 @@ async def create_task(
 
 @router.get(
     "",
-    response_model=list[TaskRead],
     summary="Список задач текущего пользователя",
 )
 async def list_tasks(
     current_user: CurrentUser,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> list[TaskRead]:
     tasks = await task_service.get_user_tasks(session, current_user)
     return [TaskRead.model_validate(t) for t in tasks]
@@ -52,7 +53,6 @@ async def list_tasks(
 
 @router.get(
     "/{task_id}",
-    response_model=TaskRead,
     summary="Получить задачу по id",
 )
 async def get_task(task: TaskDep) -> TaskRead:
@@ -61,13 +61,12 @@ async def get_task(task: TaskDep) -> TaskRead:
 
 @router.patch(
     "/{task_id}",
-    response_model=TaskRead,
     summary="Обновить задачу",
 )
 async def update_task(
     payload: TaskUpdate,
     task: TaskDep,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> TaskRead:
     try:
         updated = await task_service.update_task(session, task, payload)
@@ -78,12 +77,11 @@ async def update_task(
 
 @router.delete(
     "/{task_id}",
-    response_model=TaskDeleted,
     summary="Удалить задачу",
 )
 async def delete_task(
     task: TaskDep,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> TaskDeleted:
     task_id = await task_service.delete_task(session, task)
     return TaskDeleted(id=task_id)
@@ -91,14 +89,13 @@ async def delete_task(
 
 @router.post(
     "/{task_id}/tags/{tag_id}",
-    response_model=TaskTagLink,
     status_code=status.HTTP_201_CREATED,
     summary="Привязать тег к задаче",
 )
 async def attach_tag_to_task(
     task: TaskDep,
     tag: TagDep,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> TaskTagLink:
     await tag_service.attach_tag_to_task(session, task, tag)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)
@@ -106,13 +103,12 @@ async def attach_tag_to_task(
 
 @router.delete(
     "/{task_id}/tags/{tag_id}",
-    response_model=TaskTagLink,
     summary="Отвязать тег от задачи",
 )
 async def detach_tag_from_task(
     task: TaskDep,
     tag: TagDep,
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> TaskTagLink:
     await tag_service.detach_tag_from_task(session, task, tag)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)

@@ -1,6 +1,7 @@
 """FastAPI зависимости для аутентификации и авторизации."""
 
 import uuid
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -15,8 +16,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    session: AsyncSession = Depends(get_db),
+    token: Annotated[str, Depends(oauth2_scheme)],
+    session: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """Декодирует access-токен и возвращает активного пользователя. 401/403 при ошибке."""
     # 1. Проверка токена

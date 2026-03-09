@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Annotated
 
 from fastapi import Depends, Request
 from redis.asyncio import Redis
@@ -12,7 +13,7 @@ def rate_limit_by_ip(limit: int, window_seconds: int, scope: str) -> Callable:
 
     async def dependency(
         request: Request,
-        redis: Redis = Depends(get_redis),
+        redis: Annotated[Redis, Depends(get_redis)],
     ) -> None:
         client_ip = request.client.host if request.client else "unknown"
         key = f"rl:{scope}:ip:{client_ip}"

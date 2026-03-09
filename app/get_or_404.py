@@ -16,8 +16,8 @@ from app.security.dependences import get_current_user
 
 async def get_task_or_404(
     task_id: UUID,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Task:
     """Возвращает задачу по id. 404 если не найдена, 403 если чужая."""
     task = await task_repo.get_task_by_id(session, task_id)
@@ -32,7 +32,7 @@ async def get_task_or_404(
 
 async def get_tag_or_404(
     tag_id: UUID,
-    session: AsyncSession = Depends(get_db),
+    session: Annotated[AsyncSession, Depends(get_db)],
 ) -> Tag:
     """Возвращает тег по id или 404 если не найден."""
     tag = await tag_repo.get_tag_by_id(session, tag_id)
