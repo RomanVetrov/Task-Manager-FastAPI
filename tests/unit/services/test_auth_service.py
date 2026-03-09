@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -18,12 +19,15 @@ def fake_session() -> AsyncSession:
 
 @pytest.fixture
 def active_user() -> User:
-    user = User()
-    user.id = uuid4()
-    user.email = "user@example.com"
-    user.hashed_password = "hashed-password"
-    user.is_active = True
-    return user
+    return cast(
+        User,
+        SimpleNamespace(
+            id=uuid4(),
+            email="user@example.com",
+            hashed_password="hashed-password",
+            is_active=True,
+        ),
+    )
 
 
 @pytest.mark.asyncio
@@ -32,6 +36,7 @@ async def test_register_user_raises_when_email_already_exists(
     fake_session: AsyncSession,
     active_user: User,
 ) -> None:
+    """Проверяет, что регистрация с занятым email выбрасывает UserAlreadyExists."""
     get_user_by_email = AsyncMock(return_value=active_user)
     create_user = AsyncMock()
 
@@ -54,6 +59,7 @@ async def test_register_user_hashes_password_and_creates_user(
     fake_session: AsyncSession,
     active_user: User,
 ) -> None:
+    """Проверяет, что при регистрации пароль хэшируется и user создаётся в repo."""
     get_user_by_email = AsyncMock(return_value=None)
     hash_password = AsyncMock(return_value="hashed-by-test")
     create_user = AsyncMock(return_value=active_user)
@@ -86,6 +92,7 @@ async def test_authenticate_user_uses_dummy_hash_when_user_not_found(
     monkeypatch: pytest.MonkeyPatch,
     fake_session: AsyncSession,
 ) -> None:
+    """Проверяет защиту от тайминг-атак: verify вызывается с dummy hash при отсутствии user."""
     get_user_by_email = AsyncMock(return_value=None)
     get_dummy_hash = Mock(return_value="dummy-hash")
     verify_password = AsyncMock(return_value=False)
@@ -116,11 +123,16 @@ async def test_authenticate_active_user_raises_for_inactive_user(
     monkeypatch: pytest.MonkeyPatch,
     fake_session: AsyncSession,
 ) -> None:
-    inactive_user = User()
-    inactive_user.id = uuid4()
-    inactive_user.email = "inactive@example.com"
-    inactive_user.hashed_password = "hashed-password"
-    inactive_user.is_active = False
+    """Проверяет, что неактивный пользователь приводит к UserInactive."""
+    inactive_user = cast(
+        User,
+        SimpleNamespace(
+            id=uuid4(),
+            email="inactive@example.com",
+            hashed_password="hashed-password",
+            is_active=False,
+        ),
+    )
     authenticate_user = AsyncMock(return_value=inactive_user)
 
     monkeypatch.setattr(auth_service, "authenticate_user", cast(Any, authenticate_user))
@@ -138,6 +150,7 @@ async def test_validate_refresh_subject_raises_when_user_not_found(
     monkeypatch: pytest.MonkeyPatch,
     fake_session: AsyncSession,
 ) -> None:
+    """Проверяет, что validate_refresh_subject выбрасывает UserNotFound для отсутствующего user."""
     get_user_by_id = AsyncMock(return_value=None)
     monkeypatch.setattr(
         auth_service.user_repo, "get_user_by_id", cast(Any, get_user_by_id)
@@ -152,11 +165,16 @@ async def test_validate_refresh_subject_raises_when_user_inactive(
     monkeypatch: pytest.MonkeyPatch,
     fake_session: AsyncSession,
 ) -> None:
-    inactive_user = User()
-    inactive_user.id = uuid4()
-    inactive_user.email = "inactive@example.com"
-    inactive_user.hashed_password = "hashed-password"
-    inactive_user.is_active = False
+    """Проверяет, что validate_refresh_subject выбрасывает UserInactive для заблокированного user."""
+    inactive_user = cast(
+        User,
+        SimpleNamespace(
+            id=uuid4(),
+            email="inactive@example.com",
+            hashed_password="hashed-password",
+            is_active=False,
+        ),
+    )
     get_user_by_id = AsyncMock(return_value=inactive_user)
     monkeypatch.setattr(
         auth_service.user_repo, "get_user_by_id", cast(Any, get_user_by_id)
