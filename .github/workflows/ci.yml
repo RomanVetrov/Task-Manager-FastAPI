@@ -79,6 +79,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
+      - name: Apply Alembic migrations
+        run: uv run alembic upgrade head
+
       - name: Check Alembic drift
         run: uv run alembic check
 
