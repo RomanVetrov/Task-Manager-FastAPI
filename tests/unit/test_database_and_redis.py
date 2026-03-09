@@ -18,9 +18,8 @@ async def test_get_db_yields_async_session() -> None:
     await generator.aclose()
 
 
-@pytest.mark.asyncio
-async def test_get_redis_returns_shared_client() -> None:
+def test_get_redis_returns_shared_client() -> None:
     """Проверяет, что get_redis возвращает общий redis_client из модуля."""
-    client = await get_redis()
+    client = get_redis()
 
     assert client is redis_client
