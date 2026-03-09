@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     ARGON_HASH_LEN: int = 32
     ARGON_SALT_LEN: int = 16
     ARGON_MAX_PASSWORD_LEN: int = 1024  # basic DoS guard
+    OTEL_ENABLED: bool = True
+    OTEL_SERVICE_NAME: str = "task-manager-api"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
+    OTEL_EXPORTER_OTLP_INSECURE: bool = True
+    OTEL_SAMPLE_RATIO: float = 1.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

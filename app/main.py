@@ -11,6 +11,7 @@ from app.routes.health import router as health_router
 from app.routes.metrics import router as metrics_router
 from app.routes.tags import router as tags_router
 from app.routes.tasks import router as tasks_router
+from app.telemetry import setup_telemetry, shutdown_telemetry
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        shutdown_telemetry()
         await redis_client.aclose()
 
 
@@ -30,6 +32,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+setup_telemetry(app)
 
 # middleware регистрируются в обратном порядке (луковица).
 # RequestID должен сработать первым, поэтому добавляем его последним.
