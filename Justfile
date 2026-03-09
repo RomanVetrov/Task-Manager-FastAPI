@@ -56,6 +56,18 @@ db-shell:
 redis-cli:
   docker compose exec redis redis-cli
 
+# Установить git pre-commit hook в локальный репозиторий.
+pre-commit-install:
+  uv run pre-commit install
+
+# Прогнать pre-commit проверки по всем файлам.
+pre-commit-run:
+  uv run pre-commit run --all-files
+
+# Обновить версии хуков в .pre-commit-config.yaml.
+pre-commit-update:
+  uv run pre-commit autoupdate
+
 # Проверить код линтером Ruff (без автоисправлений).
 lint:
   uv run ruff check .

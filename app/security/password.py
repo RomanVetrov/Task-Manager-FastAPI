@@ -48,6 +48,7 @@ async def hash_password(*, password: str) -> str:
 
 async def verify_password(*, password: str, hashed_password: str) -> bool:
     with tracer.start_as_current_span("security.password.verify_argon2"):
+
         def _verify() -> bool:
             if len(password) > settings.ARGON_MAX_PASSWORD_LEN:
                 return False
