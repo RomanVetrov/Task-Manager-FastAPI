@@ -45,8 +45,7 @@ async def authenticate_user(
     """Проверяет email + пароль. Возвращает пользователя или None если данные неверны."""
     with tracer.start_as_current_span("auth.authenticate_user"):
         user = await user_repo.get_user_by_email(session, email)
-        # Всегда прогоняем Argon2, даже если email не найден — защита от тайминг-атаки.
-        # Без этого атакующий может по времени ответа определить, существует ли email.
+        # Проверяем хэш всегда, чтобы не выдавать существование email по времени ответа.
         hashed = user.hashed_password if user else get_dummy_hash()
         if not await verify_password(password=password, hashed_password=hashed):
             return None
