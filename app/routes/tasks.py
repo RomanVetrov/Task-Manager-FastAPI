@@ -1,25 +1,41 @@
 from __future__ import annotations
 
+from uuid import UUID
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache import (
+    build_tasks_list_cache_key,
+    delete_cached_tasks_list_for_user,
+    get_cached_tasks_list,
+    set_cached_tasks_list,
+)
+from app.config import settings
 from app.database import get_db
 from app.get_or_404 import CurrentUser, TagDep, TaskDep
+from app.redis import get_redis
 from app.schemas.tag import TaskTagLink
 from app.services import tag as tag_service
-from app.schemas.task import TaskCreate, TaskDeleted, TaskRead, TaskUpdate
+from app.schemas.task import TaskCreate, TaskDeleted, TaskListFilters, TaskRead, TaskUpdate
 from app.services import task as task_service
 from app.services.task import InvalidDueDate
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+RedisClient = Annotated[Redis, Depends(get_redis)]
+TaskFilters = Annotated[TaskListFilters, Depends()]
 
 _DUE_DATE_ERROR = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail="Дедлайн не может быть в прошлом",
 )
+
+
+async def _invalidate_user_tasks_cache(redis: Redis, user_id: UUID) -> None:
+    await delete_cached_tasks_list_for_user(redis, user_id)
 
 
 @router.post(
@@ -31,11 +47,13 @@ async def create_task(
     payload: TaskCreate,
     current_user: CurrentUser,
     session: DbSession,
+    redis: RedisClient,
 ) -> TaskRead:
     try:
         task = await task_service.create_task(session, current_user, payload)
     except InvalidDueDate:
         raise _DUE_DATE_ERROR
+    await _invalidate_user_tasks_cache(redis, current_user.id)
     return TaskRead.model_validate(task)
 
 
@@ -45,10 +63,37 @@ async def create_task(
 )
 async def list_tasks(
     current_user: CurrentUser,
+    filters: TaskFilters,
     session: DbSession,
+    redis: RedisClient,
 ) -> list[TaskRead]:
-    tasks = await task_service.get_user_tasks(session, current_user)
-    return [TaskRead.model_validate(t) for t in tasks]
+    if (
+        filters.due_after is not None
+        and filters.due_before is not None
+        and filters.due_after > filters.due_before
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="due_after не может быть позже due_before",
+        )
+
+    cache_key = build_tasks_list_cache_key(
+        user_id=current_user.id,
+        filters=filters.model_dump(mode="json", exclude_none=True),
+    )
+    cached_tasks = await get_cached_tasks_list(redis, cache_key)
+    if cached_tasks is not None:
+        return cached_tasks
+
+    tasks = await task_service.get_user_tasks(session, current_user, filters)
+    response = [TaskRead.model_validate(t) for t in tasks]
+    await set_cached_tasks_list(
+        redis,
+        cache_key,
+        response,
+        ttl_seconds=settings.TASKS_LIST_CACHE_TTL_SECONDS,
+    )
+    return response
 
 
 @router.get(
@@ -67,11 +112,13 @@ async def update_task(
     payload: TaskUpdate,
     task: TaskDep,
     session: DbSession,
+    redis: RedisClient,
 ) -> TaskRead:
     try:
         updated = await task_service.update_task(session, task, payload)
     except InvalidDueDate:
         raise _DUE_DATE_ERROR
+    await _invalidate_user_tasks_cache(redis, task.user_id)
     return TaskRead.model_validate(updated)
 
 
@@ -82,8 +129,10 @@ async def update_task(
 async def delete_task(
     task: TaskDep,
     session: DbSession,
+    redis: RedisClient,
 ) -> TaskDeleted:
     task_id = await task_service.delete_task(session, task)
+    await _invalidate_user_tasks_cache(redis, task.user_id)
     return TaskDeleted(id=task_id)
 
 
@@ -96,8 +145,10 @@ async def attach_tag_to_task(
     task: TaskDep,
     tag: TagDep,
     session: DbSession,
+    redis: RedisClient,
 ) -> TaskTagLink:
     await tag_service.attach_tag_to_task(session, task, tag)
+    await _invalidate_user_tasks_cache(redis, task.user_id)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)
 
 
@@ -109,6 +160,8 @@ async def detach_tag_from_task(
     task: TaskDep,
     tag: TagDep,
     session: DbSession,
+    redis: RedisClient,
 ) -> TaskTagLink:
     await tag_service.detach_tag_from_task(session, task, tag)
+    await _invalidate_user_tasks_cache(redis, task.user_id)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)

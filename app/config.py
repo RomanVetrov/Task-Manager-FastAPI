@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REDIS_URL: str = "redis://localhost:6379/0"
+    TASKS_LIST_CACHE_TTL_SECONDS: int = 60
     # Argon2 tuning (can be overridden via .env)
     ARGON_TIME_COST: int = 3
     ARGON_MEMORY_COST: int = 65536  # KiB (≈64 MiB)

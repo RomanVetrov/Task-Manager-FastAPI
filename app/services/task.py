@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.task import Task
 from app.models.user import User
 from app.repositories import task_repo
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.task import TaskCreate, TaskListFilters, TaskUpdate
 
 tracer = trace.get_tracer(__name__)
 
@@ -27,10 +27,15 @@ async def create_task(session: AsyncSession, user: User, payload: TaskCreate) ->
         return await task_repo.create_task(session, user, **payload.model_dump())
 
 
-async def get_user_tasks(session: AsyncSession, user: User) -> Sequence[Task]:
-    """Возвращает все задачи пользователя."""
+async def get_user_tasks(
+    session: AsyncSession,
+    user: User,
+    filters: TaskListFilters | None = None,
+) -> Sequence[Task]:
+    """Возвращает список задач пользователя с фильтрами и пагинацией."""
     with tracer.start_as_current_span("tasks.get_user_tasks"):
-        return await task_repo.get_tasks_by_user(session, user)
+        effective_filters = filters or TaskListFilters()
+        return await task_repo.get_tasks_by_user(session, user, effective_filters)
 
 
 async def update_task(session: AsyncSession, task: Task, payload: TaskUpdate) -> Task:
