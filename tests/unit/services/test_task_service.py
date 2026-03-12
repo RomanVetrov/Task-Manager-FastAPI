@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.task import PriorityEnum, StatusEnum, Task
 from app.models.user import User
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.task import TaskCreate, TaskListFilters, TaskUpdate
 from app.services import task as task_service
 
 
@@ -119,7 +119,36 @@ async def test_get_user_tasks_delegates_to_repository(
     received = await task_service.get_user_tasks(fake_session, active_user)
 
     assert received == tasks
-    get_tasks_by_user.assert_awaited_once_with(fake_session, active_user)
+    get_tasks_by_user.assert_awaited_once()
+    call = get_tasks_by_user.await_args
+    assert call is not None
+    assert call.args[0] is fake_session
+    assert call.args[1] is active_user
+    assert isinstance(call.args[2], TaskListFilters)
+    assert call.args[2] == TaskListFilters()
+
+
+@pytest.mark.asyncio
+async def test_get_user_tasks_passes_custom_filters_to_repository(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_session: AsyncSession,
+    active_user: User,
+    existing_task: Task,
+) -> None:
+    """Проверяет, что кастомные фильтры из service уходят в repository без потерь."""
+    tasks = [existing_task]
+    filters = TaskListFilters(status=StatusEnum.done, limit=5, offset=10)
+    get_tasks_by_user = AsyncMock(return_value=tasks)
+    monkeypatch.setattr(
+        task_service.task_repo,
+        "get_tasks_by_user",
+        cast(Any, get_tasks_by_user),
+    )
+
+    received = await task_service.get_user_tasks(fake_session, active_user, filters)
+
+    assert received == tasks
+    get_tasks_by_user.assert_awaited_once_with(fake_session, active_user, filters)
 
 
 @pytest.mark.asyncio

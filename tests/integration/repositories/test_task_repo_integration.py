@@ -5,8 +5,9 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.task import StatusEnum
+from app.models.task import PriorityEnum, StatusEnum
 from app.repositories import task_repo, user_repo
+from app.schemas.task import SortOrder, TaskListFilters, TaskSortBy
 
 pytestmark = pytest.mark.integration
 
@@ -69,3 +70,51 @@ async def test_get_tasks_by_user_filters_foreign_tasks(
     titles = sorted(task.title for task in tasks_a)
 
     assert titles == ["A1", "A2"]
+
+
+@pytest.mark.asyncio
+async def test_get_tasks_by_user_applies_filters_sorting_and_pagination(
+    db_session: AsyncSession,
+) -> None:
+    """Проверяет фильтрацию, сортировку и пагинацию в get_tasks_by_user."""
+    user = await user_repo.create_user(
+        db_session,
+        email=f"filter-user-{uuid4().hex[:8]}@example.com",
+        hashed_password="hash-user",
+    )
+
+    await task_repo.create_task(
+        db_session,
+        user,
+        title="Gamma report",
+        status=StatusEnum.done,
+        priority=PriorityEnum.high,
+    )
+    await task_repo.create_task(
+        db_session,
+        user,
+        title="Alpha report",
+        status=StatusEnum.done,
+        priority=PriorityEnum.high,
+    )
+    await task_repo.create_task(
+        db_session,
+        user,
+        title="Beta draft",
+        status=StatusEnum.todo,
+        priority=PriorityEnum.low,
+    )
+
+    filters = TaskListFilters(
+        status=StatusEnum.done,
+        priority=PriorityEnum.high,
+        q="report",
+        sort_by=TaskSortBy.task_title,
+        sort_order=SortOrder.asc,
+        limit=1,
+        offset=1,
+    )
+    filtered_tasks = await task_repo.get_tasks_by_user(db_session, user, filters)
+
+    assert len(filtered_tasks) == 1
+    assert filtered_tasks[0].title == "Gamma report"
