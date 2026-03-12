@@ -19,7 +19,13 @@ from app.get_or_404 import CurrentUser, TagDep, TaskDep
 from app.redis import get_redis
 from app.schemas.tag import TaskTagLink
 from app.services import tag as tag_service
-from app.schemas.task import TaskCreate, TaskDeleted, TaskListFilters, TaskRead, TaskUpdate
+from app.schemas.task import (
+    TaskCreate,
+    TaskDeleted,
+    TaskListFilters,
+    TaskRead,
+    TaskUpdate,
+)
 from app.services import task as task_service
 from app.services.task import InvalidDueDate
 

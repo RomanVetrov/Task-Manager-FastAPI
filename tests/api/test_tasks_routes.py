@@ -186,7 +186,9 @@ async def test_list_tasks_reads_preloaded_cache_without_service_call(
 ) -> None:
     """Проверяет попадание в кэш: ручка отдаёт данные из Redis без вызова сервиса."""
     cached_task = _make_task(current_user, title="From cache")
-    payload = [tasks_routes.TaskRead.model_validate(cached_task).model_dump(mode="json")]
+    payload = [
+        tasks_routes.TaskRead.model_validate(cached_task).model_dump(mode="json")
+    ]
     fake_redis.store[
         build_tasks_list_cache_key(
             user_id=current_user.id,
@@ -349,7 +351,9 @@ async def test_update_task_returns_200(
     assert update_task_call.args[1] is original
     assert isinstance(update_task_call.args[2], TaskUpdate)
     assert update_task_call.args[2].title == "Updated"
-    assert fake_redis.delete_calls == [build_tasks_list_cache_key(user_id=current_user.id)]
+    assert fake_redis.delete_calls == [
+        build_tasks_list_cache_key(user_id=current_user.id)
+    ]
 
 
 async def test_update_task_returns_400_for_past_due_date(
@@ -390,7 +394,9 @@ async def test_delete_task_returns_deleted_id(
 
     assert response.status_code == 200
     assert response.json() == {"id": str(task.id)}
-    assert fake_redis.delete_calls == [build_tasks_list_cache_key(user_id=current_user.id)]
+    assert fake_redis.delete_calls == [
+        build_tasks_list_cache_key(user_id=current_user.id)
+    ]
 
 
 async def test_attach_tag_to_task_returns_201(
@@ -415,7 +421,9 @@ async def test_attach_tag_to_task_returns_201(
     assert response.status_code == 201
     assert response.json() == {"task_id": str(task.id), "tag_id": str(tag.id)}
     attach_tag.assert_awaited_once_with(fake_session, task, tag)
-    assert fake_redis.delete_calls == [build_tasks_list_cache_key(user_id=current_user.id)]
+    assert fake_redis.delete_calls == [
+        build_tasks_list_cache_key(user_id=current_user.id)
+    ]
 
 
 async def test_detach_tag_from_task_returns_200(
@@ -440,7 +448,9 @@ async def test_detach_tag_from_task_returns_200(
     assert response.status_code == 200
     assert response.json() == {"task_id": str(task.id), "tag_id": str(tag.id)}
     detach_tag.assert_awaited_once_with(fake_session, task, tag)
-    assert fake_redis.delete_calls == [build_tasks_list_cache_key(user_id=current_user.id)]
+    assert fake_redis.delete_calls == [
+        build_tasks_list_cache_key(user_id=current_user.id)
+    ]
 
 
 async def test_create_task_returns_201_when_cache_invalidation_fails(
