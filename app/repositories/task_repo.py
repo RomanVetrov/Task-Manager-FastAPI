@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import asc, desc, or_, select
+from sqlalchemy import asc, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.task import Task
@@ -65,6 +65,22 @@ async def get_tasks_by_user(
 
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_task_counts_by_status(
+    session: AsyncSession, user: User
+) -> dict[str, int]:
+    """Возвращает количество задач пользователя по статусам (todo, in_progress, done)."""
+    stmt = (
+        select(Task.status, func.count(Task.id))
+        .where(Task.user_id == user.id)
+        .group_by(Task.status)
+    )
+    result = await session.execute(stmt)
+    counts = {"todo": 0, "in_progress": 0, "done": 0}
+    for status_val, count in result.all():
+        counts[status_val] = count
+    return counts
 
 
 async def create_task(session: AsyncSession, user: User, **data) -> Task:

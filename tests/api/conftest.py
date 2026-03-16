@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import cast
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -16,6 +17,8 @@ from app.database import get_db
 from app.models.user import User
 from app.redis import get_redis
 from app.routes.auth import router as auth_router
+from app.routes.dashboard import router as dashboard_router
+from app.routes.health import router as health_router
 from app.routes.tags import router as tags_router
 from app.routes.tasks import router as tasks_router
 from app.security.dependences import get_current_user
@@ -34,6 +37,13 @@ class FakeRedis:
         self.raise_on_get = False
         self.raise_on_set = False
         self.raise_on_delete = False
+        self.raise_on_ping = False
+
+    async def ping(self) -> bool:
+        """Эмуляция Redis PING для health-check."""
+        if self.raise_on_ping:
+            raise RedisConnectionError("Ошибка соединения с Redis")
+        return True
 
     async def eval(
         self, script: str, number_of_keys: int, key: str, window_seconds: int
@@ -93,8 +103,10 @@ class FakeRedis:
 
 @pytest.fixture
 def fake_session() -> object:
-    """Возвращает объект-заглушку сессии для API-тестов."""
-    return object()
+    """Возвращает объект-заглушку сессии для API-тестов (с execute для health)."""
+    session = AsyncMock()
+    session.execute = AsyncMock()
+    return session
 
 
 @pytest.fixture
@@ -123,6 +135,8 @@ def api_app(fake_session: object, fake_redis: FakeRedis, current_user: User) -> 
     """Собирает тестовое FastAPI-приложение с override зависимостей."""
     app = FastAPI()
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(health_router, prefix="/api/v1")
+    app.include_router(dashboard_router, prefix="/api/v1")
     app.include_router(tasks_router, prefix="/api/v1")
     app.include_router(tags_router, prefix="/api/v1")
 

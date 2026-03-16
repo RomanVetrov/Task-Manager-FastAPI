@@ -7,6 +7,7 @@ from app.logging_config import setup_logging
 from app.middleware import LoggingMiddleware, MetricsMiddleware, RequestIDMiddleware
 from app.redis import redis_client
 from app.routes.auth import router as auth_router
+from app.routes.dashboard import router as dashboard_router
 from app.routes.health import router as health_router
 from app.routes.metrics import router as metrics_router
 from app.routes.tags import router as tags_router
@@ -46,5 +47,6 @@ app.add_middleware(RequestIDMiddleware)
 app.include_router(metrics_router)
 app.include_router(auth_router, prefix=API_V1_PREFIX)
 app.include_router(health_router, prefix=API_V1_PREFIX)
+app.include_router(dashboard_router, prefix=API_V1_PREFIX)
 app.include_router(tasks_router, prefix=API_V1_PREFIX)
 app.include_router(tags_router, prefix=API_V1_PREFIX)
