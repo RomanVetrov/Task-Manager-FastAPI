@@ -36,11 +36,18 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
 TaskFilters = Annotated[TaskListFilters, Depends()]
 logger = getLogger(__name__)
+_BACKGROUND_CACHE_INVALIDATION_TASKS: set[asyncio.Task[None]] = set()
 
 _DUE_DATE_ERROR = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail="Дедлайн не может быть в прошлом",
 )
+
+
+def _track_background_task(task: asyncio.Task[None]) -> None:
+    """Сохраняет strong reference на фоновую задачу до её завершения."""
+    _BACKGROUND_CACHE_INVALIDATION_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_CACHE_INVALIDATION_TASKS.discard)
 
 
 def _schedule_invalidate_user_tasks_cache(redis: Redis, user_id: UUID) -> None:
@@ -58,7 +65,7 @@ def _schedule_invalidate_user_tasks_cache(redis: Redis, user_id: UUID) -> None:
                 exc_info=True,
             )
 
-    asyncio.create_task(_run())
+    _track_background_task(asyncio.create_task(_run()))
 
 
 @router.post(

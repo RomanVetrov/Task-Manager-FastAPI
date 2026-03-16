@@ -8,7 +8,10 @@ from uuid import uuid4
 
 import pytest
 
-from app.routes.tasks import _schedule_invalidate_user_tasks_cache
+from app.routes.tasks import (
+    _BACKGROUND_CACHE_INVALIDATION_TASKS,
+    _schedule_invalidate_user_tasks_cache,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,3 +31,22 @@ async def test_schedule_invalidate_runs_in_background_and_does_not_propagate_exc
         await asyncio.sleep(0.05)
 
     assert "Не удалось инвалидировать кэш задач пользователя" in caplog.text
+
+
+async def test_schedule_invalidate_keeps_task_reference_until_completion() -> None:
+    """Фоновая задача хранится в реестре до завершения и затем автоматически удаляется."""
+    redis = AsyncMock()
+    user_id = uuid4()
+
+    with patch(
+        "app.routes.tasks.delete_cached_tasks_list_for_user",
+        new_callable=AsyncMock,
+    ) as delete_cached_tasks:
+        _schedule_invalidate_user_tasks_cache(redis, user_id)
+
+        assert len(_BACKGROUND_CACHE_INVALIDATION_TASKS) == 1
+
+        await asyncio.sleep(0.05)
+
+    delete_cached_tasks.assert_awaited_once_with(redis, user_id)
+    assert not _BACKGROUND_CACHE_INVALIDATION_TASKS
