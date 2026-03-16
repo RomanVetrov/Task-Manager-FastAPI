@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+from logging import getLogger
 from uuid import UUID
 from typing import Annotated
 
@@ -33,6 +35,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
 TaskFilters = Annotated[TaskListFilters, Depends()]
+logger = getLogger(__name__)
 
 _DUE_DATE_ERROR = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
@@ -40,8 +43,22 @@ _DUE_DATE_ERROR = HTTPException(
 )
 
 
-async def _invalidate_user_tasks_cache(redis: Redis, user_id: UUID) -> None:
-    await delete_cached_tasks_list_for_user(redis, user_id)
+def _schedule_invalidate_user_tasks_cache(redis: Redis, user_id: UUID) -> None:
+    """Запускает инвалидацию кэша списка задач в фоне (fire-and-forget).
+    Исключения в фоновой задаче логируются и не пробрасываются в вызывающий код.
+    """
+
+    async def _run() -> None:
+        try:
+            await delete_cached_tasks_list_for_user(redis, user_id)
+        except Exception:  # noqa: BLE001
+            logger.warning(
+                "Не удалось инвалидировать кэш задач пользователя",
+                extra={"user_id": str(user_id)},
+                exc_info=True,
+            )
+
+    asyncio.create_task(_run())
 
 
 @router.post(
@@ -59,7 +76,7 @@ async def create_task(
         task = await task_service.create_task(session, current_user, payload)
     except InvalidDueDate:
         raise _DUE_DATE_ERROR
-    await _invalidate_user_tasks_cache(redis, current_user.id)
+    _schedule_invalidate_user_tasks_cache(redis, current_user.id)
     return TaskRead.model_validate(task)
 
 
@@ -124,7 +141,7 @@ async def update_task(
         updated = await task_service.update_task(session, task, payload)
     except InvalidDueDate:
         raise _DUE_DATE_ERROR
-    await _invalidate_user_tasks_cache(redis, task.user_id)
+    _schedule_invalidate_user_tasks_cache(redis, task.user_id)
     return TaskRead.model_validate(updated)
 
 
@@ -138,7 +155,7 @@ async def delete_task(
     redis: RedisClient,
 ) -> TaskDeleted:
     task_id = await task_service.delete_task(session, task)
-    await _invalidate_user_tasks_cache(redis, task.user_id)
+    _schedule_invalidate_user_tasks_cache(redis, task.user_id)
     return TaskDeleted(id=task_id)
 
 
@@ -154,7 +171,7 @@ async def attach_tag_to_task(
     redis: RedisClient,
 ) -> TaskTagLink:
     await tag_service.attach_tag_to_task(session, task, tag)
-    await _invalidate_user_tasks_cache(redis, task.user_id)
+    _schedule_invalidate_user_tasks_cache(redis, task.user_id)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)
 
 
@@ -169,5 +186,5 @@ async def detach_tag_from_task(
     redis: RedisClient,
 ) -> TaskTagLink:
     await tag_service.detach_tag_from_task(session, task, tag)
-    await _invalidate_user_tasks_cache(redis, task.user_id)
+    _schedule_invalidate_user_tasks_cache(redis, task.user_id)
     return TaskTagLink(task_id=task.id, tag_id=tag.id)

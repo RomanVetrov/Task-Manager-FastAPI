@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
@@ -100,6 +101,7 @@ async def test_create_task_returns_201(
             "priority": "medium",
         },
     )
+    await asyncio.sleep(0.05)  # дать выполниться фоновой инвалидации кэша
 
     assert response.status_code == 201
     assert response.json()["title"] == "New task"
@@ -341,6 +343,7 @@ async def test_update_task_returns_200(
         f"/api/v1/tasks/{original.id}",
         json={"title": "Updated"},
     )
+    await asyncio.sleep(0.05)  # дать выполниться фоновой инвалидации кэша
 
     assert response.status_code == 200
     assert response.json()["title"] == "Updated"
@@ -391,6 +394,7 @@ async def test_delete_task_returns_deleted_id(
     monkeypatch.setattr(tasks_routes.task_service, "delete_task", delete_task)
 
     response = await client.delete(f"/api/v1/tasks/{task.id}")
+    await asyncio.sleep(0.05)  # дать выполниться фоновой инвалидации кэша
 
     assert response.status_code == 200
     assert response.json() == {"id": str(task.id)}
@@ -417,6 +421,7 @@ async def test_attach_tag_to_task_returns_201(
     monkeypatch.setattr(tasks_routes.tag_service, "attach_tag_to_task", attach_tag)
 
     response = await client.post(f"/api/v1/tasks/{task.id}/tags/{tag.id}")
+    await asyncio.sleep(0.05)  # дать выполниться фоновой инвалидации кэша
 
     assert response.status_code == 201
     assert response.json() == {"task_id": str(task.id), "tag_id": str(tag.id)}
@@ -444,6 +449,7 @@ async def test_detach_tag_from_task_returns_200(
     monkeypatch.setattr(tasks_routes.tag_service, "detach_tag_from_task", detach_tag)
 
     response = await client.delete(f"/api/v1/tasks/{task.id}/tags/{tag.id}")
+    await asyncio.sleep(0.05)  # дать выполниться фоновой инвалидации кэша
 
     assert response.status_code == 200
     assert response.json() == {"task_id": str(task.id), "tag_id": str(tag.id)}

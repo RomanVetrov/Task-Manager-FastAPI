@@ -8,6 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
+from app.metrics import observe_tasks_cache_hit, observe_tasks_cache_miss
 from app.schemas.task import TaskRead
 
 logger = getLogger(__name__)
@@ -51,6 +52,7 @@ async def get_cached_tasks_list(redis: Redis, cache_key: str) -> list[TaskRead] 
     try:
         raw_payload = await redis.get(cache_key)
     except RedisError:
+        observe_tasks_cache_miss()
         logger.warning(
             "Не удалось прочитать кэш списка задач",
             extra={"cache_key": cache_key},
@@ -58,11 +60,15 @@ async def get_cached_tasks_list(redis: Redis, cache_key: str) -> list[TaskRead] 
         return None
 
     if raw_payload is None:
+        observe_tasks_cache_miss()
         return None
 
     try:
-        return _TASKS_LIST_ADAPTER.validate_json(raw_payload)
+        tasks = _TASKS_LIST_ADAPTER.validate_json(raw_payload)
+        observe_tasks_cache_hit()
+        return tasks
     except ValidationError:
+        observe_tasks_cache_miss()
         await delete_cached_tasks_list(redis, cache_key)
         return None
 

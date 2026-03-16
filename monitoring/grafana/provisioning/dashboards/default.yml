@@ -6,7 +6,7 @@ providers:
     folder: Task Manager
     type: file
     disableDeletion: false
-    allowUiUpdates: true
+    allowUiUpdates: false
     updateIntervalSeconds: 10
     options:
       path: /etc/grafana/provisioning/dashboards/json
