@@ -37,13 +37,18 @@
 - безопасную auth-логику (JWT access + refresh, Argon2, rate limit)
 - чистую слоистую архитектуру (routes/services/repositories/models)
 - полноценную наблюдаемость (logs + metrics + tracing)
+- измеримую производительность (Locust, Redis cache, Prometheus, Grafana)
 - production-ready инфраструктуру (Docker, CI/CD, GHCR)
 
 ## Что реализовано
 
 - Регистрация, логин, refresh, logout, endpoint `/me`
 - CRUD задач с валидацией дедлайна и ownership-check
+- Фильтрация, сортировка и пагинация списка задач
 - CRUD тегов и связь many-to-many `Task <-> Tag`
+- Dashboard endpoint с параллельной агрегацией задач, тегов и счётчиков по статусам
+- Readiness-check для БД и Redis (`/health/ready`)
+- Redis-кэш списка задач `/tasks` с TTL, hit/miss-метриками и инвалидацией при изменениях
 - Ограничение запросов по IP для auth-ручек через Redis Lua script
 - Корреляция запросов через `X-Request-ID`
 - Структурированные JSON-логи с `trace_id` и `span_id`
@@ -119,11 +124,16 @@
 - `PATCH /tags/{tag_id}`
 - `DELETE /tags/{tag_id}`
 
+### Dashboard
+
+- `GET /dashboard`
+
 ### Service endpoints
 
 - `GET /metrics`
 - `GET /api/v1/health/db`
 - `GET /api/v1/health/redis`
+- `GET /api/v1/health/ready`
 
 ## Локальный запуск через Docker Compose
 
@@ -148,6 +158,7 @@ SECRET_KEY=your_secret_key_min_32_chars
 ```env
 ALGORITHM=HS256
 REDIS_URL=redis://localhost:6379/0
+TASKS_LIST_CACHE_TTL_SECONDS=60
 ACCESS_TOKEN_EXPIRE_MINUTES=10
 REFRESH_TOKEN_EXPIRE_DAYS=7
 GRAFANA_ADMIN_USER=admin
@@ -197,6 +208,28 @@ uv run uvicorn app.main:app --reload
 - базовые метрики:
   - `http_requests_total`
   - `http_request_duration_seconds`
+- метрики кэша списка задач:
+  - `tasks_cache_hits_total`
+  - `tasks_cache_misses_total`
+
+## Производительность
+
+Нагрузочный прогон для сравнения кэша списка задач `/api/v1/tasks`:
+
+- профиль нагрузки: `Locust`, `100 users`, `ramp-up 10/s`, `5 минут`
+- сравнение режимов: `TASKS_LIST_CACHE_TTL_SECONDS=60` и `TASKS_LIST_CACHE_TTL_SECONDS=0`
+
+Зафиксированный эффект:
+
+- `GET /api/v1/tasks p95`: `120 ms -> 80 ms` (`-33.3%`)
+- `GET /api/v1/tasks avg`: `46.96 ms -> 31.76 ms` (`-32.4%`)
+- `GET /api/v1/tasks RPS`: `49.7 -> 53.9` (`+8.5%`)
+- `Aggregated p95`: `120 ms -> 84 ms` (`-30.0%`)
+- `Aggregated avg`: `45.14 ms -> 33.62 ms` (`-25.5%`)
+- `Cache hit ratio`: `42.9%`
+
+Формулировка эффекта:
+- Redis-кэш ускоряет чтение списка задач и снижает задержку без деградации error rate под смешанной нагрузкой.
 
 ### Tracing
 
