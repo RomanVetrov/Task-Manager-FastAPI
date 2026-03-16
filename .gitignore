@@ -1,5 +1,4 @@
 # Project-local docs/notes
-CLAUDE.md
 request_map.md
 
 # Environment and secrets
@@ -48,3 +47,6 @@ dist/
 .idea/
 .vscode/
 .DS_Store
+
+
+docs/
